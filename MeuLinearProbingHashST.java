@@ -209,17 +209,14 @@ public class MeuLinearProbingHashST<Key, Value> {
         //         a tabela seja redimensionada se o fator de carga
         //         passar de alfaSup.
         if (key == null) throw new IllegalArgumentException("first argument to put() is null");
-
         if (val == null) {
             delete(key);
             return;
         }
-
         // double table size if n/m > alfasup
-        if (n/(duble) m > alfasup) resize(++iPrimes);
-
+        if (n/(double) m > alfasup) resize(++iPrimes);
         int i;
-        for (i = hash(key); keys[i] != null; i = (i + 1) % m) {
+        for (i = hash(key); vals[i] != null; i = (i + 1) % m) {
             if (keys[i].equals(key)) {
                 vals[i] = val;
                 return;
@@ -238,17 +235,14 @@ public class MeuLinearProbingHashST<Key, Value> {
         //         alfaInf.
         if (key == null) throw new IllegalArgumentException("argument to delete() is null");
         if (!contains(key)) return;
-
         // find position i of key
         int i = hash(key);
         while (!key.equals(keys[i])) {
             i = (i + 1) % m;
         }
-
         // delete key and associated value
         keys[i] = null;
         vals[i] = null;
-
         // rehash all keys in same cluster
         i = (i + 1) % m;
         while (keys[i] != null) {
@@ -264,8 +258,8 @@ public class MeuLinearProbingHashST<Key, Value> {
 
         n--;
 
-        // halves size of array if it's 12.5% full or less
-        if (n > 0 && n <= m/8) resize(m/2);
+        //Resize array if alfa < alfasup
+        if ((n/(double) m) > alfaSup) resize(--iPrimes);
 
         assert check();
     }
@@ -291,6 +285,19 @@ public class MeuLinearProbingHashST<Key, Value> {
     private boolean check() {
         // TAREFA: veja o método original e adapte para verificar que
         //         a tabela de hash está no máximo alfaSup% cheia.
+        // check that hash table has alfa <= alfaSup
+        if ((n/(double) m) > alfaSup) {
+            return false;
+        }
+        // check that each key in table can be found by get()
+        for (int i = 0; i < m; i++) {
+            if (keys[i] == null) continue;
+            else if (get(keys[i]) != vals[i]) {
+                System.err.println("get[" + keys[i] + "] = " + get(keys[i]) + "; vals[i] = " + vals[i]);
+                return false;
+            }
+        }
+        return true;
     }
 
     /********************************************************************
@@ -319,6 +326,19 @@ public class MeuLinearProbingHashST<Key, Value> {
      */
     public int maxCluster() {
         // TAREFA
+        int max = 0, count = 0;
+        if (n == m) return m;
+        for (int i = 0; i < m; i++) {
+            if (vals[i] == null) {
+                if (count > max)
+                    max = count;
+                count = 0;
+            }
+            else {
+                count ++;
+            }
+        }
+        return max;
     }
 
     /**
@@ -331,6 +351,22 @@ public class MeuLinearProbingHashST<Key, Value> {
      */
     public int numClusters() {
         // TAREFA
+        int num = 0;
+        boolean cluster = false;
+        if (n == m) return 1;
+        if (vals[0] != null) num++;
+        for (int i = 1; i < m; i++) {
+            if (vals[i] == null) {
+                cluster = true;
+            }
+            else {
+                if (cluster) {
+                    num ++;
+                }
+                cluster = false;
+            }
+        }
+        return num;
     }
 
 
@@ -344,7 +380,7 @@ public class MeuLinearProbingHashST<Key, Value> {
      *
      *   para buscas bem-sucedidas e
      *
-     *            0.5 * (1 + a/(1-alfa)^2)
+     *            0.5 * (1 + 1/(1-alfa)^2)
      *
      *   para buscas malsucedidas.
      */
@@ -360,6 +396,8 @@ public class MeuLinearProbingHashST<Key, Value> {
      */
     public double averageSearchHit() {
         // TAREFA
+        double alfa = n/(double) m;
+        return 0.5 * (1 + 1/(1-alfa));
     }
 
     /**
@@ -372,6 +410,8 @@ public class MeuLinearProbingHashST<Key, Value> {
      */
     public double averageSearchMiss() {
         // TAREFA
+        double alfa = n/(double) m;
+        return 0.5 * (1 + 1/(1-alfa)^2);
     }
 
 
