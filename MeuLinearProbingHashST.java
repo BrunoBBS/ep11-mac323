@@ -137,8 +137,8 @@ public class MeuLinearProbingHashST<Key, Value> {
         this.m = PRIMES[iPrimes];
         this.alfaSup = alfaSup;
         this.alfaInf = alfaInf;
-        this.keys = (keys[]) new Object[m];
-        this.values = (values[]) new Object[m];
+        this.keys = (Key[]) new Object[m];
+        this.vals = (Value[]) new Object[m];
     }
 
     // return the number of key-value pairs in the symbol table
@@ -190,11 +190,17 @@ public class MeuLinearProbingHashST<Key, Value> {
     private void resize(int k) {
         // TAREFA: veja o método original e faça adaptação para que
         //         o tamanho da nova tabela seja PRIMES[k].
+        if (k < 0)
+            k = 0;
         MeuLinearProbingHashST<Key, Value> tmp = new MeuLinearProbingHashST<>(PRIMES[k], alfaInf, alfaSup);
         for (int i = 0; i < m; i++) {
-            tmp.put(keys[i]);
+            if (keys[i] != null)
+                tmp.put(keys[i], vals[i]);
         }
-        this = tmp;
+        this.n = tmp.n;
+        this.m = tmp.m;
+        this.keys = tmp.keys;
+        this.vals = tmp.vals;
     }
 
     /**
@@ -214,7 +220,7 @@ public class MeuLinearProbingHashST<Key, Value> {
             return;
         }
         // double table size if n/m > alfasup
-        if (n/(double) m > alfasup) resize(++iPrimes);
+        if (n/(double) m > alfaSup) resize(++iPrimes);
         int i;
         for (i = hash(key); vals[i] != null; i = (i + 1) % m) {
             if (keys[i].equals(key)) {
@@ -258,8 +264,8 @@ public class MeuLinearProbingHashST<Key, Value> {
 
         n--;
 
-        //Resize array if alfa < alfasup
-        if ((n/(double) m) > alfaSup) resize(--iPrimes);
+        //Resize array if alfa < alfainf
+        if ((n/(double) m) < alfaInf) resize(--iPrimes);
 
         assert check();
     }
@@ -328,7 +334,8 @@ public class MeuLinearProbingHashST<Key, Value> {
         // TAREFA
         int max = 0, count = 0;
         if (n == m) return m;
-        for (int i = 0; i < m; i++) {
+        for (int i = 1; i < m; i++) {
+            if (i == m - 1 && vals[0] != null) count ++;
             if (vals[i] == null) {
                 if (count > max)
                     max = count;
@@ -354,7 +361,6 @@ public class MeuLinearProbingHashST<Key, Value> {
         int num = 0;
         boolean cluster = false;
         if (n == m) return 1;
-        if (vals[0] != null) num++;
         for (int i = 1; i < m; i++) {
             if (vals[i] == null) {
                 cluster = true;
@@ -411,7 +417,7 @@ public class MeuLinearProbingHashST<Key, Value> {
     public double averageSearchMiss() {
         // TAREFA
         double alfa = n/(double) m;
-        return 0.5 * (1 + 1/(1-alfa)^2);
+        return 0.5 * (1 + 1/((1-alfa)*(1-alfa)));
     }
 
 
@@ -501,6 +507,7 @@ public class MeuLinearProbingHashST<Key, Value> {
         StdOut.println("ST contém " + n + " itens");
         StdOut.println("Tabela hash tem " + m + " posições");
         StdOut.println("Maior comprimento de um cluster é " + meuST.maxCluster());
+        StdOut.println("O número de clusters é " + meuST.numClusters());
         StdOut.printf("Número de clusters é %d (media = %.2f)\n", nClusters, (double) n / nClusters);
         StdOut.printf("Fator de carga (= n/m) = %.2f\n", (double) n/m);
         StdOut.printf("Custo médio de uma busca bem-sucedida = %.2f (%.2f)\n",
